@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biomovil – Reportes</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --verde: #3a7d2c;
+    --verde-oscuro: #2c5e20;
+    --amarillo: #f5c800;
+    --negro: #1a1a1a;
+    --gris-bg: #f4f4f0;
+    --gris-borde: #d0d0c8;
+    --texto: #222;
+    --texto-sec: #555;
+    --blanco: #fff;
+    --rojo-claro: #fff0f0;
+    --rojo-borde: #f5b8b8;
+    --rojo-texto: #b00020;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--gris-bg); color: var(--texto); min-height: 100vh; }
+
+  /* HEADER */
+  .header { background: var(--verde-oscuro); padding: 14px 20px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+  .header img { height: 50px; width: auto; }
+  .header-text h1 { color: var(--blanco); font-size: 16px; font-weight: 700; letter-spacing: 0.01em; }
+  .header-text p { color: rgba(255,255,255,0.75); font-size: 12px; margin-top: 2px; }
+
+  /* TABS */
+  .tabs { display: flex; background: var(--verde); border-bottom: 3px solid var(--amarillo); }
+  .tab { flex: 1; padding: 13px 8px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.75); background: none; border: none; cursor: pointer; letter-spacing: 0.02em; transition: background 0.15s, color 0.15s; text-align: center; }
+  .tab.active { color: var(--amarillo); background: rgba(0,0,0,0.15); border-bottom: 3px solid var(--amarillo); margin-bottom: -3px; }
+  .tab:hover:not(.active) { background: rgba(0,0,0,0.1); color: #fff; }
+
+  /* PANELS */
+  .panel { display: none; padding: 20px 16px 40px; max-width: 600px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* FORM */
+  .section-label { font-size: 11px; font-weight: 700; color: var(--verde-oscuro); text-transform: uppercase; letter-spacing: 0.08em; margin: 22px 0 10px; padding-left: 4px; border-left: 3px solid var(--amarillo); padding-left: 8px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 13px; color: var(--texto-sec); margin-bottom: 4px; font-weight: 500; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--gris-borde);
+    border-radius: 8px; font-size: 14px; color: var(--texto); background: var(--blanco);
+    font-family: inherit; appearance: none; -webkit-appearance: none; transition: border 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--verde); }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* FOTO */
+  .photo-zone { border: 2px dashed var(--gris-borde); border-radius: 10px; padding: 20px; text-align: center; background: #fafaf8; cursor: pointer; transition: border-color 0.15s; }
+  .photo-zone:hover { border-color: var(--verde); }
+  .photo-zone .icon { font-size: 28px; margin-bottom: 6px; }
+  .photo-zone p { font-size: 13px; color: var(--texto-sec); }
+  .photo-zone small { font-size: 11px; color: #aaa; display: block; margin-top: 3px; }
+  input[type="file"] { display: none; }
+  .photo-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .photo-thumb { width: 68px; height: 68px; object-fit: cover; border-radius: 8px; border: 1.5px solid var(--gris-borde); }
+
+  /* BOTONES */
+  .btn-submit {
+    width: 100%; padding: 14px; background: var(--verde); color: var(--blanco);
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
+    cursor: pointer; margin-top: 20px; letter-spacing: 0.03em;
+    box-shadow: 0 3px 0 var(--verde-oscuro); transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .btn-submit:hover { background: var(--verde-oscuro); }
+  .btn-submit:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--verde-oscuro); }
+
+  .btn-export {
+    padding: 10px 18px; background: var(--amarillo); color: var(--negro);
+    border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.02em; transition: background 0.15s;
+  }
+  .btn-export:hover { background: #e0b500; }
+
+  /* SUCCESS */
+  .success-msg { display: none; text-align: center; padding: 3rem 1rem; }
+  .success-icon { width: 64px; height: 64px; background: var(--verde); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .success-icon svg { width: 32px; height: 32px; stroke: white; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .success-msg h2 { font-size: 20px; color: var(--verde-oscuro); margin-bottom: 8px; }
+  .success-msg p { font-size: 14px; color: var(--texto-sec); }
+
+  /* ADMIN */
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin: 4px 0 16px; flex-wrap: wrap; gap: 10px; }
+  .admin-header h3 { font-size: 16px; font-weight: 700; }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .stat-card { background: var(--blanco); border: 1.5px solid var(--gris-borde); border-radius: 10px; padding: 12px 10px; text-align: center; }
+  .stat-val { font-size: 28px; font-weight: 800; color: var(--verde-oscuro); line-height: 1; margin-bottom: 4px; }
+  .stat-label { font-size: 11px; color: var(--texto-sec); font-weight: 500; }
+  .record-list { display: flex; flex-direction: column; gap: 10px; }
+  .record-card { background: var(--blanco); border: 1.5px solid var(--gris-borde); border-radius: 10px; padding: 14px; }
+  .record-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .record-name { font-size: 14px; font-weight: 700; color: var(--negro); }
+  .record-date { font-size: 12px; color: var(--texto-sec); }
+  .record-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--gris-bg); color: var(--texto-sec); border: 1px solid var(--gris-borde); font-weight: 500; }
+  .badge.inc { background: var(--rojo-claro); color: var(--rojo-texto); border-color: var(--rojo-borde); }
+  .record-act { font-size: 12px; color: var(--texto-sec); margin-top: 8px; line-height: 1.5; }
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--texto-sec); font-size: 14px; }
+
+  /* LINK BOX */
+  .link-box { background: var(--blanco); border: 1.5px solid var(--gris-borde); border-radius: 10px; padding: 12px 14px; margin-bottom: 20px; }
+  .link-label { font-size: 11px; font-weight: 700; color: var(--verde-oscuro); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .link-row { display: flex; align-items: center; gap: 8px; }
+  .link-url { font-size: 12px; color: var(--texto-sec); word-break: break-all; flex: 1; }
+  .btn-copy { padding: 7px 14px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--verde); border-radius: 6px; background: var(--blanco); color: var(--verde); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+  .btn-copy:hover { background: var(--verde); color: white; }
+
+  /* REQUIRED */
+  .req { color: #c00; }
+
+  /* UBICACION */
+  .ubicacion-box { border: 1.5px solid var(--gris-borde); border-radius: 10px; overflow: hidden; background: var(--blanco); }
+  .ubicacion-top { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+  .btn-gps { flex-shrink: 0; padding: 9px 16px; background: var(--verde); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
+  .btn-gps:hover { background: var(--verde-oscuro); }
+  .btn-gps:disabled { background: #aaa; cursor: not-allowed; }
+  .gps-status { font-size: 13px; color: var(--texto-sec); flex: 1; }
+  .gps-status.ok { color: var(--verde-oscuro); font-weight: 600; }
+  .gps-status.err { color: var(--rojo-texto); }
+  .gps-coords { font-size: 11px; color: var(--texto-sec); padding: 0 14px 10px; display: none; }
+  .gps-coords a { color: var(--verde); font-weight: 600; text-decoration: none; }
+  .gps-map { width: 100%; height: 180px; border: none; border-top: 1px solid var(--gris-borde); display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="data:image/png;base64,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" alt="Biomovil Logo" onerror="this.style.display='none'">
+  <div class="header-text">
+    <h1>Biomovil</h1>
+    <p>Sistema de Reportes</p>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('form', this)">📋 Formulario</button>
+  <button class="tab" onclick="switchTab('admin', this)">🗂 Panel Admin</button>
+</div>
+
+<!-- FORMULARIO TRABAJADOR -->
+<div id="panel-form" class="panel active">
+  <div id="form-body">
+    <div class="section-label">Datos personales</div>
+    <div class="field"><label>Nombre completo <span class="req">*</span></label><input type="text" id="f-nombre" placeholder="Juan Pérez García"></div>
+    <div class="two-col">
+      <div class="field"><label>CURP</label><input type="text" id="f-curp" placeholder="PEGJ850312..." style="text-transform:uppercase"></div>
+      <div class="field"><label>Teléfono</label><input type="tel" id="f-tel" placeholder="55 1234 5678"></div>
+    </div>
+
+    <div class="section-label">Asistencia</div>
+    <div class="two-col">
+      <div class="field"><label>Fecha <span class="req">*</span></label><input type="date" id="f-fecha"></div>
+      <div class="field"><label>Turno <span class="req">*</span></label>
+        <select id="f-turno">
+          <option value="">— selecciona —</option>
+          <option>Matutino</option><option>Vespertino</option><option>Nocturno</option>
+        </select>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="field"><label>Hora de entrada <span class="req">*</span></label><input type="time" id="f-entrada"></div>
+      <div class="field"><label>Hora de salida</label><input type="time" id="f-salida"></div>
+    </div>
+
+    <div class="section-label">Unidad / Vehículo</div>
+    <div class="field"><label>Número económico de unidad</label><input type="text" id="f-unidad" placeholder="UNI-042 (si aplica)"></div>
+    <div class="two-col">
+      <div class="field"><label>KM inicial</label><input type="number" id="f-km-ini" placeholder="12400"></div>
+      <div class="field"><label>KM final</label><input type="number" id="f-km-fin" placeholder="12650"></div>
+    </div>
+
+    <div class="section-label">Reporte de actividades</div>
+    <div class="field"><label>Actividades realizadas <span class="req">*</span></label><textarea id="f-actividades" placeholder="Describe las actividades del turno..."></textarea></div>
+
+    <div class="section-label">Incidencias</div>
+    <div class="field"><label>¿Hubo alguna incidencia?</label>
+      <select id="f-incidencia-tipo">
+        <option value="">— sin incidencias —</option>
+        <option>Accidente</option><option>Falla mecánica</option>
+        <option>Problema con cliente</option><option>Retraso</option><option>Otro</option>
+      </select>
+    </div>
+    <div class="field"><label>Descripción de incidencia</label><textarea id="f-incidencia-desc" placeholder="Describe qué ocurrió..."></textarea></div>
+
+    <div class="section-label">Ubicación GPS</div>
+    <div class="ubicacion-box">
+      <div class="ubicacion-top">
+        <button class="btn-gps" id="btn-gps" onclick="obtenerUbicacion()">📍 Capturar ubicación</button>
+        <span class="gps-status" id="gps-status">Toca el botón para registrar tu ubicación actual</span>
+      </div>
+      <div class="gps-coords" id="gps-coords">
+        <span id="gps-texto"></span> — <a id="gps-link" href="#" target="_blank">Ver en Google Maps</a>
+      </div>
+      <iframe id="gps-map" class="gps-map" allowfullscreen loading="lazy"></iframe>
+    </div>
+
+    <div class="section-label">Evidencia fotográfica</div>
+    <div class="photo-zone" onclick="document.getElementById('foto-input').click()">
+      <div class="icon">📷</div>
+      <p>Toca aquí para agregar fotos</p>
+      <small>JPG, PNG • máximo 5 fotografías</small>
+    </div>
+    <input type="file" id="foto-input" accept="image/*" multiple onchange="previewFotos(event)">
+    <div class="photo-preview" id="foto-preview"></div>
+
+    <button class="btn-submit" onclick="enviarFormulario()">Enviar reporte ✓</button>
+  </div>
+
+  <div class="success-msg" id="success-msg">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h2>¡Reporte enviado!</h2>
+    <p>Tu información fue registrada correctamente.<br>Gracias por tu reporte.</p>
+    <button class="btn-submit" style="max-width:240px;margin:20px auto 0;" onclick="nuevoReporte()">Nuevo reporte</button>
+  </div>
+</div>
+
+<!-- PANEL ADMIN -->
+<div id="panel-admin" class="panel">
+  <div class="section-label" style="margin-top:8px;">Enlace para compartir</div>
+  <div class="link-box">
+    <div class="link-label">Comparte este enlace por WhatsApp con tus trabajadores</div>
+    <div class="link-row">
+      <span class="link-url" id="link-display">—</span>
+      <button class="btn-copy" id="btn-copy" onclick="copiarLink()">Copiar</button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val" id="stat-hoy">0</div><div class="stat-label">Reportes hoy</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-total">0</div><div class="stat-label">Total registros</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-inc">0</div><div class="stat-label">Incidencias</div></div>
+  </div>
+
+  <div class="admin-header">
+    <h3>Registros</h3>
+    <button class="btn-export" onclick="exportarExcel()">⬇ Descargar Excel</button>
+  </div>
+
+  <div class="record-list" id="record-list">
+    <div class="empty-state">Los reportes de tus trabajadores aparecerán aquí.</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const KEY = 'biomovil_reportes_v1';
+let reportes = [];
+let gpsData = null;
+
+function save() { try { localStorage.setItem(KEY, JSON.stringify(reportes)); } catch(e){} }
+function load() { try { reportes = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch(e){ reportes=[]; } }
+
+function obtenerUbicacion() {
+  const btn = document.getElementById('btn-gps');
+  const status = document.getElementById('gps-status');
+  if (!navigator.geolocation) {
+    status.textContent = 'Tu navegador no soporta GPS.'; status.className = 'gps-status err'; return;
+  }
+  btn.disabled = true; btn.textContent = '⏳ Obteniendo...';
+  status.textContent = 'Detectando ubicación...'; status.className = 'gps-status';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      const acc = Math.round(pos.coords.accuracy);
+      gpsData = { lat, lng, acc };
+      status.textContent = `✓ Ubicación capturada (±${acc}m)`; status.className = 'gps-status ok';
+      btn.textContent = '🔄 Actualizar'; btn.disabled = false;
+      const coords = document.getElementById('gps-coords');
+      const mapa = document.getElementById('gps-map');
+      document.getElementById('gps-texto').textContent = `${lat}, ${lng}`;
+      document.getElementById('gps-link').href = `https://www.google.com/maps?q=${lat},${lng}`;
+      coords.style.display = 'block';
+      mapa.src = `https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed`;
+      mapa.style.display = 'block';
+    },
+    err => {
+      const msgs = { 1:'Permiso de ubicación denegado.', 2:'No se pudo detectar la ubicación.', 3:'Tiempo de espera agotado.' };
+      status.textContent = msgs[err.code] || 'Error al obtener ubicación.'; status.className = 'gps-status err';
+      btn.textContent = '📍 Reintentar'; btn.disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function switchTab(t, el) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + t).classList.add('active');
+  if (t === 'admin') renderAdmin();
+}
+
+function previewFotos(e) {
+  const preview = document.getElementById('foto-preview');
+  preview.innerHTML = '';
+  Array.from(e.target.files).slice(0, 5).forEach(f => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = document.createElement('img');
+      img.src = ev.target.result;
+      img.className = 'photo-thumb';
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function v(id) { return (document.getElementById(id)||{}).value||''; }
+
+function enviarFormulario() {
+  if (!v('f-nombre').trim() || !v('f-fecha') || !v('f-actividades').trim()) {
+    alert('Por favor completa los campos obligatorios: nombre, fecha y actividades.');
+    return;
+  }
+  const ki = v('f-km-ini'), kf = v('f-km-fin');
+  load();
+  reportes.push({
+    id: Date.now(),
+    fecha: v('f-fecha'),
+    nombre: v('f-nombre').trim(),
+    curp: v('f-curp').trim(),
+    telefono: v('f-tel').trim(),
+    turno: v('f-turno'),
+    entrada: v('f-entrada'),
+    salida: v('f-salida'),
+    unidad: v('f-unidad').trim(),
+    km_inicial: ki,
+    km_final: kf,
+    km_recorridos: (ki && kf) ? (parseInt(kf) - parseInt(ki)) : '',
+    actividades: v('f-actividades').trim(),
+    incidencia_tipo: v('f-incidencia-tipo'),
+    incidencia_desc: v('f-incidencia-desc').trim(),
+    fotos: document.getElementById('foto-preview').children.length,
+    gps_lat: gpsData ? gpsData.lat : '',
+    gps_lng: gpsData ? gpsData.lng : '',
+    gps_precision: gpsData ? gpsData.acc + 'm' : '',
+    gps_maps: gpsData ? `https://www.google.com/maps?q=${gpsData.lat},${gpsData.lng}` : '',
+    timestamp: new Date().toISOString()
+  });
+  save();
+  document.getElementById('form-body').style.display = 'none';
+  document.getElementById('success-msg').style.display = 'block';
+}
+
+function nuevoReporte() {
+  ['f-nombre','f-curp','f-tel','f-turno','f-fecha','f-entrada','f-salida',
+   'f-unidad','f-km-ini','f-km-fin','f-actividades','f-incidencia-tipo','f-incidencia-desc']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('foto-preview').innerHTML = '';
+  gpsData = null;
+  document.getElementById('gps-status').textContent = 'Toca el botón para registrar tu ubicación actual';
+  document.getElementById('gps-status').className = 'gps-status';
+  document.getElementById('btn-gps').textContent = '📍 Capturar ubicación';
+  document.getElementById('btn-gps').disabled = false;
+  document.getElementById('gps-coords').style.display = 'none';
+  document.getElementById('gps-map').style.display = 'none';
+  document.getElementById('gps-map').src = '';
+  document.getElementById('form-body').style.display = 'block';
+  document.getElementById('success-msg').style.display = 'none';
+}
+
+function renderAdmin() {
+  load();
+  const hoy = new Date().toISOString().slice(0,10);
+  document.getElementById('stat-hoy').textContent = reportes.filter(r=>r.fecha===hoy).length;
+  document.getElementById('stat-total').textContent = reportes.length;
+  document.getElementById('stat-inc').textContent = reportes.filter(r=>r.incidencia_tipo).length;
+  document.getElementById('link-display').textContent = window.location.href;
+  const list = document.getElementById('record-list');
+  if (!reportes.length) { list.innerHTML='<div class="empty-state">Los reportes de tus trabajadores aparecerán aquí.</div>'; return; }
+  list.innerHTML = [...reportes].reverse().map(r => `
+    <div class="record-card">
+      <div class="record-top">
+        <div class="record-name">${r.nombre}</div>
+        <div class="record-date">${r.fecha}${r.turno?' · '+r.turno:''}</div>
+      </div>
+      <div class="record-meta">
+        ${r.unidad?`<span class="badge">🚌 ${r.unidad}</span>`:''}
+        ${r.km_recorridos?`<span class="badge">📍 ${r.km_recorridos} km</span>`:''}
+        ${r.entrada?`<span class="badge">⏰ ${r.entrada}</span>`:''}
+        ${r.fotos>0?`<span class="badge">📷 ${r.fotos} foto(s)</span>`:''}
+        ${r.gps_lat?`<span class="badge"><a href="${r.gps_maps}" target="_blank" style="color:inherit;text-decoration:none;">🗺 Ver mapa</a></span>`:''}
+        ${r.incidencia_tipo?`<span class="badge inc">⚠ ${r.incidencia_tipo}</span>`:''}
+      </div>
+      ${r.actividades?`<div class="record-act">${r.actividades.slice(0,140)}${r.actividades.length>140?'…':''}</div>`:''}
+    </div>`).join('');
+}
+
+function exportarExcel() {
+  load();
+  if (!reportes.length) { alert('No hay registros para exportar.'); return; }
+  const headers = ['Fecha','Nombre','CURP','Teléfono','Turno','Hora Entrada','Hora Salida',
+    'Unidad','KM Inicial','KM Final','KM Recorridos','Actividades',
+    'Incidencia Tipo','Incidencia Descripción','Fotos',
+    'GPS Latitud','GPS Longitud','GPS Precisión','GPS Google Maps','Timestamp'];
+  const rows = reportes.map(r => [r.fecha,r.nombre,r.curp,r.telefono,r.turno,r.entrada,r.salida,
+    r.unidad,r.km_inicial,r.km_final,r.km_recorridos,r.actividades,
+    r.incidencia_tipo,r.incidencia_desc,r.fotos,
+    r.gps_lat,r.gps_lng,r.gps_precision,r.gps_maps,r.timestamp]);
+  const ws = XLSX.utils.aoa_to_sheet([headers,...rows]);
+  ws['!cols'] = [8,22,18,12,10,10,10,14,10,10,12,40,16,30,6,12,12,10,40,22].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Reportes Biomovil');
+  XLSX.writeFile(wb, `Reportes_Biomovil_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function copiarLink() {
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    const btn = document.getElementById('btn-copy');
+    btn.textContent = '¡Copiado!';
+    setTimeout(() => btn.textContent = 'Copiar', 2000);
+  }).catch(() => alert('Copia manualmente la URL de tu navegador.'));
+}
+
+// Init
+document.getElementById('f-fecha').value = new Date().toISOString().slice(0,10);
+</script>
+</body>
+</html>
